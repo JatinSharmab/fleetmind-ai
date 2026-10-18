@@ -4,12 +4,18 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from app.api.routes import health, simulation
+from app.api.routes import (
+    health,
+    intelligence,
+    models,
+    simulation,
+)
 from app.core.config import get_settings
 from app.core.logging import configure_logging
 from app.db.postgres import PostgresManager
 from app.db.redis import RedisManager
 from app.events.publisher import RedisEventPublisher
+from app.llm.factory import build_model_gateway
 from app.simulator.exceptions import SimulationError
 
 
@@ -34,6 +40,12 @@ async def lifespan(
         settings.redis_url
     )
 
+    model_gateway = (
+        build_model_gateway(
+            settings
+        )
+    )
+
     logger.info(
         "fleetmind_starting",
         extra={
@@ -47,6 +59,9 @@ async def lifespan(
 
         app.state.postgres = postgres
         app.state.redis = redis
+        app.state.model_gateway = (
+            model_gateway
+        )
 
         app.state.event_publisher = (
             RedisEventPublisher(
@@ -69,6 +84,8 @@ async def lifespan(
         yield
 
     finally:
+        await model_gateway.close()
+
         await redis.disconnect()
         await postgres.disconnect()
 
@@ -80,7 +97,7 @@ async def lifespan(
 def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.app_name,
-        version="0.1.0",
+        version="0.2.0",
         lifespan=lifespan,
     )
 
@@ -92,12 +109,22 @@ def create_app() -> FastAPI:
         simulation.router
     )
 
+    app.include_router(
+        intelligence.router
+    )
+
+    app.include_router(
+        models.router
+    )
+
     @app.get("/")
     async def root() -> dict[str, str]:
         return {
             "service": settings.app_name,
-            "phase": "1",
-            "architecture": "Digital Twin Foundation",
+            "phase": "2",
+            "architecture": (
+                "Digital Twin + Model Gateway"
+            ),
         }
 
     @app.exception_handler(

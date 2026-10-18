@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fleetmind-backend"
-version = "0.1.0"
-description = "Backend and Digital Twin foundation for FleetMind AI"
+version = "0.2.0"
+description = "Backend, Digital Twin, and LLM intelligence foundation for FleetMind AI"
 requires-python = ">=3.14,<3.15"
 
 dependencies = [
@@ -14,6 +14,11 @@ dependencies = [
     "networkx>=3.7,<4.0",
     "asyncpg>=0.29,<1.0",
     "redis>=5.2,<8.0",
+
+    "groq>=1.7,<2.0",
+    "google-genai>=2.23,<3.0",
+    "mistralai>=2.5,<3.0",
+    "ollama>=0.6.3,<1.0",
 ]
 
 [project.optional-dependencies]
